@@ -1,0 +1,38 @@
+---
+title: "Title"
+subtitle: "Alexandra Orczyk, Vy Nguyen, Xiyue Huang"
+graphics: yes
+output: 
+        pdf_document:
+         toc: false
+         number_sections: true
+urlcolor: blue
+header-includes:
+- \usepackage{amsmath,amsfonts,amssymb}
+- \usepackage{multicol,graphicx,hyperref,xcolor}
+- \usepackage{setspace} \doublespacing
+fontsize: 11pt
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Abstract: 
+
+During the COVID-19 pandemic, Tens of millions of people have been infected with COVID-19, emphasizing the importance of safe and effective vaccines. IIn December 2020, Pfizer and BioNTech were granted permission to distribute their BNT162b2 vaccine, a nucleoside-modified RNA vaccine encoding the SARS-CoV-2 spike protein. To test its efficacy, a placebo-controlled, observer-blinded trial was conducted with 35,092 participants aged 16 and older, randomized in a 1:1 ratio to receive two doses of BNT162b2 or placebo, 21 days apart. The study targeted 170 infections resulting in 8 cases in the vaccine group and 162 in the placebo group, indicating a vaccine efficacy of 95%. A Bayesian beta-binomial model confirmed this efficacy, with a 95% confidence interval of [90.3%, 97.6%] and a probability greater than 0.9999 that the efficacy exceeds 30%, indicating the vaccine's outstanding efficacy. In this project, we will conduct a similar analysis and approach the result by using different methods to measure the safety and efficacy of the vaccine. 
+
+# Keywords:
+
+COVID-19, BNT162b2, Vaccine efficacy, Binomial distribution, Hypothesis testing, Confidence Interval
+
+# Introduction:
+
+# Statistical Methods:
+
+# Discussion/Conclusion:
+
+# References:
+
+# Appendix:
