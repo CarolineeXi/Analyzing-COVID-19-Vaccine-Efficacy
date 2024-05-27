@@ -1,0 +1,233 @@
+---
+title: "Title"
+subtitle: "Alexandra Orczyk, Vy Nguyen, Xiyue Huang"
+graphics: yes
+output: 
+        pdf_document:
+         toc: false
+         number_sections: true
+urlcolor: blue
+header-includes:
+- \usepackage{amsmath,amsfonts,amssymb}
+- \usepackage{multicol,graphicx,hyperref,xcolor}
+- \usepackage{setspace} \doublespacing
+fontsize: 11pt
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+# Abstract: 
+
+During the COVID-19 pandemic, Tens of millions of people have been infected with COVID-19, emphasizing the importance of safe and effective vaccines. In December 2020, Pfizer and BioNTech were granted permission to distribute their BNT162b2 vaccine, a nucleoside-modified RNA vaccine encoding the SARS-CoV-2 spike protein. To test its efficacy, a placebo-controlled, observer-blinded trial was conducted with 35,092 participants aged 16 and older, randomized in a 1:1 ratio to receive two doses of BNT162b2 or placebo, 21 days apart. The study targeted 170 infections resulting in 8 cases in the vaccine group and 162 in the placebo group, indicating a vaccine efficacy of 95%. A Bayesian beta-binomial model confirmed this efficacy, with a 95% confidence interval of [90.3%, 97.6%] and a probability greater than 0.9999 that the efficacy exceeds 30%, indicating the vaccine's outstanding efficacy. In this project, we will conduct a similar analysis and approach the result by using different methods to measure the safety and efficacy of the vaccine. 
+
+# Keywords:
+
+COVID-19, BNT162b2, Vaccine efficacy, Binomial distribution, Hypothesis testing, Confidence Interval
+
+# Introduction:
+
+Prior studies on the efficacy of the various COVID-19 vaccines, particiularly the Pfizer and Moderna mRNA vaccines, have found them to be highly effective at lowering infection, lowering the severity of symptoms, and preventing hospitalization and death. For example, Cai, Peng, et.al calculated a 95% confidence interval of $93.65$%–$95.40$% as an estimate of the vaccine efficacy rate of the mRNA vaccines, which was defined as $\frac{\text{Risk among unvaccinated group} - \text{risk among vaccinated group}}{\text{Risk among unvaccinated group}}$. Similarly, a systematic review by Grana, Ghosn, et. al found "high-certainty evidence" that the BioNTech/Pfizer vaccine reduced both the prevalence of symptomatic COVID-19 and symptom severity compared to placebo. However, they found lower efficacy against newer COVID-19 variants. Although there are some estimates that make the vaccines seem less effective, such as the Absolute Risk Reduction of 0.9% for the Pfizer vaccine reported by Olliaro, Torreele, et.al, however, since this statistic reports the difference in infection rates between the unvaccinated and vaccinated population, it has the flaw of reporting a higher degree of efficacy for the vaccines tested in populations with a higher rate of Covid-19, which is why most studies use other estimators. Overall, the majority of studies report a high degree of efficacy for the mRNA Covid-19 vaccines.
+
+# Statistical Methods:
+
+#Model: Single Binomial random variables
+
+Let X denote the # in the BNT162b2 group out of all the n=170 Covid-19 cases
+
+Then, $X \sim Binom(n=170, \pi)$
+
+The likelihood function for $\pi$ is 
+
+$$L(\pi) = \binom{n}{x}\pi^x.(1-\pi)^{n-x}$$
+
+Since we are interested in the vaccine efficacy of the BNT162b2, our parameter of $\phi$ in terms of the binomial probability $\pi$ as follow:
+
+$$\phi = \frac{1-2\pi}{1-\pi}$$
+We can write $\pi = g(\phi) = \frac{1-\phi}{2-\phi}$ 
+
+__Method 1:  Likelihood Inference for Vaccine efficacy__
+
+In order to estimate the vaccine efficacy, we can construct a likelihood function for $\phi$ and then use it to derive confidence intervals and perform hypothesis testing
+
+$L(\phi) = L(g(\phi)) = \binom{n}{x}(\frac{1-\phi}{2-\phi})^x.(1-\frac{1-\phi}{2-\phi})^{n-x}$
+
+\begin{align*}
+L(\phi) &= \binom{n}{x}(\frac{1-\phi}{2-\phi})^x.(1-\frac{1-\phi}{2-\phi})^{n-x} \\
+&= \binom{n}{x}(\frac{1-\phi}{2-\phi})^x.(\frac{2- \phi - 1 + \phi}{2-\phi})^{n-x} \\
+&= \binom{n}{x}(1-\phi)^x(\frac{1}{2-\phi})^x.(\frac{1}{2-\phi})^{n-x} \\
+&= \binom{n}{x}\frac{(1-\phi)^x}{(2-\phi)^n} \ \ \ \ \ \  -\infty \leq \phi \leq 1
+\end{align*}
+
+To find $\phi^{mle}$, we will derive the first derivative of the log-likelihood function
+
+\begin{align*}
+\frac{d}{d_\phi}ln(L(\phi)) &=  \frac{d}{d_\phi}(ln\binom{n}{x} +ln(1-\phi)^x - ln(2-\phi)^n) \ \ \ \ \ \  0\leq \phi < \infty \\
+&= \frac{-x}{1-\phi} + \frac{n}{2-\phi}
+\end{align*}
+
+Candidates for the MLE of $\phi$ satisfy the equation:
+
+\begin{align*}
+\frac{d}{d_\phi}ln(L(\phi_0)) &=0 \\
+\frac{-x}{1-\phi_0} + \frac{n}{2-\phi_0} &= 0 \\
+\frac{n}{2-\phi_0} &= \frac{x}{1-\phi_0} \\
+n(1-\phi_0) &= x(2-\phi_0) \\
+n -n\phi_0 &= 2x - x\phi_0 \\
+n-2x &= (n-x)\phi_0 \\
+\phi_0^{mle} &= \frac{n-2x}{n-x}
+\end{align*}
+
+Second derivative:
+
+\begin{align*}
+\frac{d}{d_\phi}ln'(L(\phi_0)) &=  \frac{d}{d_\phi}(\frac{-x}{1-\phi_0} + \frac{n}{2-\phi_0})\\
+&= \frac{x}{(1-\phi_0)^2} - \frac{n}{(2-\phi_0)^2}
+\end{align*} 
+
+Confident Interval of $\phi_0^{mle}$
+
+By theorem 25.1, we get $\phi_0^{mle}$ is approximately normally distributed with mean $\phi_0$ and estimated standard error given by $\sqrt{\frac{1}{l"(\phi_0^{mle})}}$
+
+We have: 
+
+\begin{align*}
+l"(\phi_0^{mle}) &= \frac{d}{d_{\phi_0}}(\frac{-x}{1-\phi} + \frac{n}{2-\phi})\\
+&= -\frac{x}{(1-\phi_0)^2} + \frac{n}{(2-\phi_0)^2} \\
+&= \frac{-x}{(1-\frac{n-2x}{n-x})^2} + \frac{n}{(2-\frac{n-2x}{n-x})^2} \\
+&= \frac{-x}{(\frac{n-x -n+2x}{n-x})^2} + \frac{n}{(\frac{2n-2x-n+2x}{n-x})^2} \\
+&= \frac{-x}{(\frac{x}{n-x})^2} + \frac{n}{(\frac{n}{n-x})^2} \\
+&= \frac{-1}{\frac{x}{(n-x)^2}} + \frac{1}{\frac{n}{(n-x)^2}} \\
+&= (n-x)^2(\frac{1}{n}-\frac{1}{x})
+\end{align*}
+
+Now let check the second derivative to see if $\phi_0^{mle}$ is maximum likelihood estimate of $\phi_0$ 
+
+Since $(n-x)^2 \geq 0$, let's check if $\frac{1}{n}-\frac{1}{x}$
+
+As we know that $x \leq n$, then $\frac{1}{n} \leq \frac{1}{x} = \frac{1}{n} - \frac{1}{x} \leq  0$
+
+Thus, $l"(\phi_0^{mle}) = (n-x)^2(\frac{1}{n}-\frac{1}{x})  \leq  0$, so $\phi_0^{mle}$ is maximum likelihood estimate of $\phi_0$.
+
+
+Now we can derive the standard error of $\phi_0$
+
+\begin{align*}
+SE(\phi_0) &= \sqrt{\frac{-1}{l"(\phi^{mle})}} \\
+&= \sqrt{\frac{(1-\phi_0)^2(2-\phi_0)^2}{x(2-\phi_0)^2-n(1-\phi_0)^2}} \\
+&= \frac{(1-\phi_0)(2-\phi_0)}{\sqrt{x(2-\phi_0)^2-n(1-\phi_0)^2}}
+\end{align*}
+
+Hence, the Confidence Interval for $\phi_0$ is:
+
+$\hat{\phi_0}^{mle} \pm z_{\alpha/2}.SE = \hat{\phi_0}^{mle} \pm z_{\alpha/2}.\frac{(1-\phi_0)(2-\phi_0)}{\sqrt{-x(2-\phi_0)^2+n(1-\phi_0)^2}}$
+
+Let $\phi_0$ denote the true (but unknown) value of vaccine efficacy. We want to test:
+
+$H_0: \phi_0 = \phi_0^{null}$,
+
+$H_1: \phi_0 \not= \phi_0^{null}$
+
+The likelihood ratio test statistic is:
+
+$$W = 2ln[\frac{L(\hat{\phi_0}^{mle})}{L(\phi_0^{null})}] = 2ln[l(\phi_0^{mle}) -l(\phi_0^{null})] \approx X_1^2$$
+We can calculate P value as following: 
+
+p-value = $P(X_1^2 \geq w) = pchisq(w, df=1, lower.tail = F)$ 
+
+# Result
+
+We know there is a total of 170 infections including 8 cases of BNT162b2 vaccine, so n = 170 and x = 8
+
+Let's calculate $\phi_0^{mle}$
+
+```{r}
+mle <- (170 - 2*8)/(170-8)
+mle
+```
+
+$\phi_0^{mle} = \frac{n-2x}{n-x} = \frac{170 - 2*8}{170-8} =$ `r mle`.
+
+We can estimate the standard error:
+
+$SE = \frac{(1-\phi_0)(2-\phi_0)}{\sqrt{x(2-\phi_0)^2-n(1-\phi_0)^2}}$
+
+```{r}
+se <- (1-mle)*(2-mle)/sqrt(8*(2-mle)^2 - 170*(1-mle)^2)
+se
+```
+
+
+Let $\phi_0$ denote the true (but unknown) value of vaccine efficacy. We want to test:
+
+$H_0: \phi_0 = \phi_0^{null} = 0.3$,
+
+$H_1: \phi_0 \not= \phi_0^{null}$
+
+The likelihood ratio test statistic is:
+
+$$W = 2ln[\frac{L(\hat{\phi_0}^{mle})}{L(\phi_0^{null})}] = 2ln[l(\phi_0^{mle}) -l(\phi_0^{null})]$$
+First we need to calculate $l(\phi_0^{mle})$ 
+
+$L(\phi_0^{mle}) = \binom{n}{x}\frac{(1-\phi)^x}{(2-\phi)^n}$
+
+$l(\phi_0^{mle}) &= ln\binom{n}{x} +ln(1-\phi_0^{mle})^x - ln(2-\phi_0^{mle})^n$
+
+```{r}
+L_mle <- choose(170, 8)*(1-mle)^8/(2-mle)^170
+log_mle <- log(choose(170, 8)) + log((1-mle)^8) -log((2-mle)^170)
+L_mle
+log_mle
+```
+
+$l(\phi_0^{null}) = ln\binom{n}{x} +ln(1-\phi_0^{null})^x - ln(2-\phi_0^{null})^n$ 
+
+```{r}
+null = 0.3
+L_null <- choose(170, 8)*(1-null)^8/(2-null)^170
+log_null <- log(choose(170, 8)) + log((1-null)^8) -log((2-null)^170)
+L_null
+log_null
+```
+
+```{r}
+w = 2*log(log_mle - log_null)
+w
+```
+
+```{r}
+pvalue = pchisq(w, df=1, lower.tail = F)
+pvalue
+```
+
+
+```{r}
+data = data.frame(
+  group = c("BioNTech-Pfizer", "Placebo"),
+  num_cases = c(8, 162),
+  count = c("17,411 subjects", "17,511 subjects")
+)
+
+ggplot(data, aes(x = group, y = num_cases)) + 
+    geom_col(fill = "#0099f9", width = 0.6) +  labs(
+      title = "Number of Covid-19 Cases in Group Receiving Pfizer Vaccine vs. Placebo", y= "Number of cases at least 7 days after receiving dose"
+  ) + geom_text(aes(label = count), vjust=-0.5)
+```
+
+```{r}
+
+```
+
+
+# Discussion/Conclusion:
+
+# References:
+
+https://www.cell.com/molecular-therapy-family/molecular-therapy/fulltext/S1525-0016(21)00395-6#secsectitle0025
+https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD015477/full
+https://www.thelancet.com/journals/ebiom/article/PIIS2666-5247(21)00069-0/fulltext
+
+# Appendix:
