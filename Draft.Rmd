@@ -1,0 +1,271 @@
+---
+title: "Title"
+subtitle: "Alexandra Orczyk, Vy Nguyen, Xiyue Huang"
+graphics: yes
+output: 
+        pdf_document:
+         toc: false
+         number_sections: true
+urlcolor: blue
+header-includes:
+- \usepackage{amsmath,amsfonts,amssymb}
+- \usepackage{multicol,graphicx,hyperref,xcolor}
+- \usepackage{setspace} \doublespacing
+fontsize: 11pt
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(fastR2)
+library(maxLik)
+library(ggplot2)
+library(boot)
+library(tibble)
+library(purrr)
+```
+
+# Abstract: 
+
+# Keywords:
+
+# Introduction:
+
+# Statistical Methods:
+
+__Method 1: MLE
+
+if our sample size is not very large, we can calculate empirical P-value by simulation.
+
+```{r}
+obs_w = 121
+
+set.seed(123)
+B <- 100
+
+
+psi_null = 0.3
+n = 170
+x = 8
+### probability of COVID with vaccine
+cases_vaccine = (1-psi_null)/(2-psi_null)
+### probability of COVID with no vaccine 
+cases_placebo = 1-cases_vaccine
+
+null_wstar = numeric(B)
+
+for(i in 1:B) {
+  sample_boot <- sample(c(1, 0), size = n, replace = TRUE, prob = c(cases_vaccine, cases_placebo))
+  xstar <- sum(sample_boot == 1)
+  mle <- (n - 2 * xstar) / (n - xstar)
+  loglik_mle <- log(choose(n, xstar)) + xstar*log(1 - mle) - n*log(2 - mle)
+  loglik_null <- log(choose(n, xstar)) + xstar*log(1 - psi_null) - n*log(2 - psi_null)
+  null_wstar[i] <- 2 * (loglik_mle - loglik_null)
+}
+
+# Visualize the null distribution of wstar
+ggplot(data = data.frame(x = null_wstar),
+       mapping = aes(x = x)) +
+  geom_histogram(mapping = aes(y = after_stat(density)),
+                 binwidth = 0.7) +
+  geom_vline(xintercept = obs_w, color = "red") +
+  labs(title = "Null distribution of W")
+
+pvalue <- mean(null_wstar >= obs_w)
+cat("Empirical P-value:", pvalue)
+```
+
+
+
+
+__Method 2:  Method of Moment Inference for Vaccine efficacy__
+
+We are interested in the value of $\hat\phi^{mom}_0$. Since $\pi = \frac{1-\psi}{2-\psi}$, we can find the M.O.M estimate of $\psi_0$ by solving the equation $E(X) = \bar{x}$, where $\bar{x}$ equals to x in our data.
+$$
+\begin{aligned}
+    E(X) &= x \\
+    n \pi &= x \\
+    n \frac{1-\psi}{2-\psi} &= x \\
+    2x - x \psi &= n - n \psi \\
+    \psi (n-x) &= n-2x \\
+    \psi &= \frac{ n-2x }{ n-x }
+\end{aligned}
+$$
+
+Therefore, $\hat\psi^{mom}_0 = \frac{n-2x}{n-x}$.
+Now, in order to make inferences about $\psi$(the vaccine efficacy) using the method of moments (MOM) approach, we can construct confidence intervals (CI) and conduct hypothesis testing. 
+
+To construct confidence intervals for $\psi$, we will use bootstrapping method.
+In the context of vaccine efficacy, we will first randomly re-sample the original data with replacement. Second, for each re-sample, calculate the desired statistic (e.g.,$\phi$, the vaccine efficacy). Then, repeat the re-sampling process many times (e.g., 100 times) to build a distribution of the statistic. Finally, using the bootstrap distribution to calculate confidence intervals of $\phi$:
+
+$$
+\hat\phi^{mom}_0 \pm Z_{\alpha/2}SE(\hat\phi^{mom}_0)
+$$
+where $\alpha$ is the significant level.
+
+Another statistical inference of our estimation is hypothesis testing. In the context of vaccine efficacy, let $\phi_0$ denote the true (but unknown) value of vaccine efficacy. We want to test:
+
+$H_0: \phi_0 = \phi_0^{null}$,
+
+$H_1: \phi_0 \not= \phi_0^{null}$
+
+By using the empirical p-value from the bootstrap distribution, we can make a more robust inference about the vaccine efficacy $\phi$. If the empirical p-value is less than the significance level, we reject the null hypothesis and conclude that the vaccine has a significant effect.
+
+# Resutls:
+
+Plot for log likelihood function
+```{r}
+# Define the log-likelihood function
+loglik.binom <- function(phi, x, n) {
+  ifelse((phi < 0 | phi > 1), NA, log(choose(n, x)) + x * log(1 - phi) - n * (2 - phi))
+}
+
+# Example data
+n <- 170
+x <- 8
+
+theta_0_mle_estimate <- (n-2*x)/(n-x)
+
+phi_values <- seq(0, 1, by = 0.01)
+log_likelihood_values <- sapply(phi_values, function(phi) loglik.binom(phi, x, n))
+
+# plot of log likelihood function for phi
+plot(phi_values, log_likelihood_values, type = "l",
+     xlab = "phi", ylab = "log-likelihood", main = "Log-Likelihood Function")
+abline(v = theta_0_mle_estimate, col = "blue")
+text(x = theta_0_mle_estimate, y = max(-340:-220), labels = "MLE", pos = 2, col = "blue")
+
+```
+Regularity Condition Check
+
+
+```{r,warning=FALSE}
+# Define the second-order Taylor approximation function
+taylor_approx <- function(phi, x, n, phi_hat) {
+  loglik_prime <- - x / (1 - phi_hat) + n / (2 - phi_hat)
+  loglik_double_prime <- - x / (1 - phi_hat)^2 + n / (2 - phi_hat)^2
+  return(loglik.binom(phi_hat, x, n) + loglik_prime * (phi - phi_hat) + 0.5 * loglik_double_prime * (phi - phi_hat)^2)
+}
+
+phi_values <- seq(0.01, 0.99, by = 0.01)
+
+# Compute the log-likelihood values and the second-order Taylor approximation
+loglik_values <- loglik.binom(phi_values, 8, 170)
+taylor_values <- taylor_approx(phi_values, 8, 170, theta_0_mle_estimate)
+
+# Create a dataframe for plotting
+df <- data.frame(phi = phi_values, loglik = loglik_values, taylor = taylor_values)
+
+# Plot
+ggplot(df, aes(phi)) +
+  geom_line(aes(y = loglik, color = "Log-Likelihood"), size = 1) +
+  geom_line(aes(y = taylor, color = "Taylor Approximation"), linetype = "dashed", size = 1) +
+  geom_vline(xintercept = theta_0_mle_estimate, color = "blue", linetype = "dotted", size = 1) +
+  labs(title = "Log-Likelihood and Second-Order Taylor Approximation",
+       x = expression(phi),
+       y = "Log-Likelihood") +
+  scale_color_manual(values = c("black", "red"),
+                     labels = c("Log-Likelihood", "Taylor Approximation")) +
+  theme_minimal() +
+  annotate("text", x = theta_0_mle_estimate + 0.05, y = max(df$loglik, na.rm = TRUE) - 100, 
+           label = "MLE", color = "blue")
+```
+
+
+MOM
+
+Perform bootstrap sampling.
+Calculate the method of moments estimate for each sample.
+Calculate the confidence interval for each bootstrap sample.
+Plot the confidence intervals.
+
+```{r}
+# Define parameters
+B <- 100
+n <- 170
+prob1 <- 8 / 170
+prob2 <- 162 / 170
+z <- qnorm(0.975)
+
+# Initialize vectors to store bootstrap values and confidence intervals
+boot_values <- numeric(B)
+se_boot <- numeric(B)
+lower_mom_boot <- numeric(B)
+upper_mom_boot <- numeric(B)
+
+# Perform bootstrap sampling
+set.seed(123)  # For reproducibility
+for (i in 1:B) {
+  sample_boot <- sample(c(0, 1), size = n, replace = TRUE, prob = c(prob1, prob2))
+  x <- length(which(sample_boot == 0))
+  boot_values[i] <- (n - 2*x) / (n - x)
+  se_boot[i] <- sd(sample_boot)  # Standard error for each bootstrap sample
+  lower_mom_boot[i] <- boot_values[i] - z * se_boot[i]
+  upper_mom_boot[i] <- boot_values[i] + z * se_boot[i]
+}
+
+# Calculate overall standard error for the estimator
+se <- sd(boot_values)
+
+# Calculate overall confidence interval for the estimator
+psi_mom <- 154 / 162
+lower_mom <- psi_mom - z * se
+upper_mom <- psi_mom + z * se
+
+# Print results
+cat("95% Confidence Interval for psi_mom:", lower_mom, "to", upper_mom, "\n")
+```
+
+```{r}
+# Create a dataframe for plotting
+sample_summary <- data.frame(
+  sample = 1:B,
+  lower = lower_mom_boot,
+  upper = upper_mom_boot,
+  estimate = boot_values
+)
+
+# Plot the confidence intervals for the bootstrap samples
+ggplot(data = sample_summary) +
+  geom_segment(mapping = aes(x = lower, xend = upper, y = sample, yend = sample), color = "blue") +
+  labs(x = "Sample Confidence Interval", y = "Bootstrap Samples",
+       title = "90% Confidence Interval for 100 Bootstrap Samples") +
+  theme_minimal() +
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
+  geom_vline(xintercept = psimom, color = "red", linetype = "dashed") +
+  annotate("text", x = psimom, y = B * 0.95, label = "Observed Efficacy", color = "red", angle = 90, vjust = -0.5)
+```
+
+```{r}
+# Calculate empirical p-value
+set.seed(123)
+B <- 100
+psi_null = 0.3
+n = 170
+x = 8
+### probability of COVID with vaccine
+cases_vaccine = (1-psi_null)/(2-psi_null)
+### probability of COVID with no vaccine 
+cases_placebo = 1-cases_vaccine
+
+for(i in 1:B) {
+  sample_boot = sample(c(1, 0), size = n, replace = TRUE, prob = c(cases_vaccine, cases_placebo)) 
+  x = length(which(sample_boot == 1))
+  boot_values[i] = (n - 2 * x) / (n - x)
+}
+empirical_p_value <- mean(boot_values >= observed_efficacy)
+cat("Empirical p-value:", empirical_p_value, "\n")
+```
+
+
+
+The plot will show the 95% confidence interval for the vaccine efficacy estimate, with the observed MOM estimate indicated by a red dashed line and a blue point. This visualization helps to see the variability and central tendency of the MOM estimates obtained from bootstrapping
+
+
+
+
+# Discussion/Conclusion:
+
+# References:
+
+# Appendix:
