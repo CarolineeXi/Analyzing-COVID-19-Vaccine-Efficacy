@@ -1,0 +1,512 @@
+---
+title: "Analyzing COVID-19 Vaccine Efficacy: Comparing MLE and MOM Methods for Pfizer-BioNTech's BNT162b2"
+subtitle: "Alexandra Orczyk, Vy Nguyen, Xiyue Huang"
+graphics: yes
+output: 
+        pdf_document:
+         toc: false
+         number_sections: true
+urlcolor: blue
+header-includes:
+- \usepackage{amsmath,amsfonts,amssymb}
+- \usepackage{multicol,graphicx,hyperref,xcolor}
+- \usepackage{setspace} \doublespacing
+fontsize: 11pt
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(tidyverse)
+```
+
+# Abstract: 
+
+During the COVID-19 pandemic, Tens of millions of people have been infected with COVID-19, emphasizing the importance of safe and effective vaccines. In December 2020, Pfizer and BioNTech were granted permission to distribute their BNT162b2 vaccine, a nucleoside-modified RNA vaccine encoding the SARS-CoV-2 spike protein. To test its efficacy, a placebo-controlled, observer-blinded trial was conducted with 35,092 participants aged 16 and older, randomized in a 1:1 ratio to receive two doses of BNT162b2 or placebo, 21 days apart. The study targeted 170 infections resulting in 8 cases in the vaccine group and 162 in the placebo group, indicating a vaccine efficacy of 95%. A Bayesian beta-binomial model confirmed this efficacy, with a 95% confidence interval of [90.3%, 97.6%] and a probability greater than 0.9999 that the efficacy exceeds 30%, indicating the vaccine's outstanding efficacy. In this project, we will conduct a similar analysis and approach the result by using different methods to measure the safety and efficacy of the vaccine. 
+
+# Keywords:
+
+COVID-19, BNT162b2, Vaccine efficacy, Binomial distribution, Hypothesis testing, Confidence Interval
+
+# Introduction:
+
+Prior studies on the efficacy of the various COVID-19 vaccines, particiularly the Pfizer and Moderna mRNA vaccines, have found them to be highly effective at lowering infection, lowering the severity of symptoms, and preventing hospitalization and death. For example, Cai, Peng, et.al calculated a 95% confidence interval of $93.65$%–$95.40$% as an estimate of the vaccine efficacy rate of the mRNA vaccines, which was defined as $\frac{\text{Risk among unvaccinated group} - \text{risk among vaccinated group}}{\text{Risk among unvaccinated group}}$. Similarly, a systematic review by Grana, Ghosn, et. al found "high-certainty evidence" that the BioNTech/Pfizer vaccine reduced both the prevalence of symptomatic COVID-19 and symptom severity compared to placebo. However, they found lower efficacy against newer COVID-19 variants. Although there are some estimates that make the vaccines seem less effective, such as the Absolute Risk Reduction of 0.9% for the Pfizer vaccine reported by Olliaro, Torreele, et.al, however, since this statistic reports the difference in infection rates between the unvaccinated and vaccinated population, it has the flaw of reporting a higher degree of efficacy for the vaccines tested in populations with a higher rate of COVID-19, which is why most studies use other estimators. Overall, the majority of studies report a high degree of efficacy for the mRNA Covid-19 vaccines.
+
+# Statistical Methods:
+
+Let X denote the number of COVID-19 cases in the BNT162b2 (vaccine) group out of the total n=170 COVID-19 cases observed in the study. We assume that X follows a binomial distribution: $X \sim Binom(n=170, \pi)$, where $\pi$ is the probability of observing a COVID-19 case in the vaccine group. In this case, $\pi= \frac{\pi_v}{\pi_v + \pi_p}$ where $\pi_v$ and $\pi_p$ are the probabilities of an infection in the vaccine and placebo groups respectively.
+
+The parameter of interest is the vaccine efficacy, denoted by $\psi$. Vaccine efficacy is related to the binomial probability $\pi$ through the following relationship: $$\psi = \frac{1-2\pi}{1-\pi}$$
+We can also express $\pi$ as a function of: $$\pi = g(\psi) = \frac{1-\psi}{2-\psi}$$
+
+## Method 1:  Likelihood Inference for Vaccine efficacy
+
+To estimate the vaccine efficacy $\psi$, we will use the likelihood function for $\pi$ and then transform it to infer $\psi$.
+
+The likelihood function for $\pi$ given the observed data $x$ is: $L(\pi) = \binom{n}{x}\pi^x.(1-\pi)^{n-x}$.
+
+Since our parameter of interest is $\psi$, we substitute $\pi = \frac{1-\psi}{2-\psi}$ into the likelihood function to get: 
+$L(\psi) = L(g(\psi)) = \binom{n}{x}(\frac{1-\psi}{2-\psi})^x.(1-\frac{1-\psi}{2-\psi})^{n-x}$
+
+We can simplify the expression for the likelihood function $L(\psi)$:
+\begin{align*}
+L(\psi) &= \binom{n}{x}(\frac{1-\psi}{2-\psi})^x.(1-\frac{1-\psi}{2-\psi})^{n-x} \\
+&= \binom{n}{x}(\frac{1-\psi}{2-\psi})^x.(\frac{2- \psi - 1 + \psi}{2-\psi})^{n-x} \\
+&= \binom{n}{x}(1-\psi)^x(\frac{1}{2-\psi})^x.(\frac{1}{2-\psi})^{n-x} \\
+&= \binom{n}{x}\frac{(1-\psi)^x}{(2-\psi)^n} \ \ \ \ \ \  0 \leq \psi \leq 1
+\end{align*}
+
+The log-likelihood function is then given by:
+$l(\psi) = ln\binom{n}{x} + xln(1-\psi) - nln(2-\psi)$
+
+To find $\psi^{mle}$, we will derive the first derivative of the log-likelihood function:
+\begin{align*}
+\frac{d}{d_\psi} l(\psi) &=  \frac{d}{d_\psi}(ln\binom{n}{x} + xln(1-\psi) - nln(2-\psi)) \\
+&= \frac{-x}{1-\psi} + \frac{n}{2-\psi} \ \ \ \ 0\leq \psi < 1
+\end{align*}
+
+Candidates for the MLE of $\psi$ satisfy the equation:
+\begin{align*}
+\frac{d}{d_\psi} l(\psi_0) &=0 \\
+\frac{-x}{1-\psi_0} + \frac{n}{2-\psi_0} &= 0 \\
+\frac{n}{2-\psi_0} &= \frac{x}{1-\psi_0} \\
+n(1-\psi_0) &= x(2-\psi_0) \\
+n -n\psi_0 &= 2x - x\psi_0 \\
+n-2x &= (n-x)\psi_0 \\
+\psi_0^{mle} &= \frac{n-2x}{n-x}
+\end{align*}
+
+We need to use second derivative test of the log-likelihood function to ensure concavity:
+\begin{align*}
+\frac{d^2}{d_\psi^2} l(\psi_0)
+&=  \frac{d}{d_\psi}(\frac{-x}{1-\psi_0} + \frac{n}{2-\psi_0})\\
+&= \frac{x}{(1-\psi_0)^2} - \frac{n}{(2-\psi_0)^2} \\
+&= \frac{-x}{(1-\frac{n-2x}{n-x})^2} + \frac{n}{(2-\frac{n-2x}{n-x})^2} \\
+&= \frac{-x}{(\frac{n-x -n+2x}{n-x})^2} + \frac{n}{(\frac{2n-2x-n+2x}{n-x})^2} \\
+&= \frac{-x}{(\frac{x}{n-x})^2} + \frac{n}{(\frac{n}{n-x})^2} \\
+&= \frac{-1}{\frac{x}{(n-x)^2}} + \frac{1}{\frac{n}{(n-x)^2}} \\
+&= (n-x)^2(\frac{1}{n}-\frac{1}{x})
+\end{align*} 
+
+As we know that $x \leq n$, then $(n-x)^2 \geq 0$ and $\frac{1}{n} \leq \frac{1}{x} = \frac{1}{n} - \frac{1}{x} \leq 0$. Thus, $l"(\psi_0^{mle}) = (n-x)^2(\frac{1}{n}-\frac{1}{x})  \leq  0$, so $\psi_0^{mle}$ is the maximum likelihood estimate of $\psi_0$.
+
+Now, we want to do statistical inference for the vaccine efficacy, we can use the likelihood function for $\psi$ to derive confidence intervals and perform hypothesis testing.
+
+__Confident Interval of $\psi_0^{mle}$__
+
+By theorem 25.1, we get $\psi_0^{mle}$ is approximately normally distributed with mean $\psi_0$ and estimated standard error given by $\sqrt{\frac{1}{l"(\psi_0^{mle})}}$
+
+Now we can derive the standard error of $\psi_0$
+\begin{align*}
+SE(\psi_0) &= \sqrt{\frac{-1}{l"(\psi^{mle})}} \\
+&= \sqrt{\frac{(1-\psi_0)^2(2-\psi_0)^2}{x(2-\psi_0)^2-n(1-\psi_0)^2}} \\
+&= \frac{(1-\psi_0)(2-\psi_0)}{\sqrt{x(2-\psi_0)^2-n(1-\psi_0)^2}}
+\end{align*}
+
+Hence, the Confidence Interval for $\psi_0$ is:
+$\hat{\psi_0}^{mle} \pm z_{\alpha/2}.SE = \hat{\psi_0}^{mle} \pm z_{\alpha/2}.\frac{(1-\psi_0)(2-\psi_0)}{\sqrt{-x(2-\psi_0)^2+n(1-\psi_0)^2}}$
+
+__Hypothesis Testing for $\psi_0^{mle}$__
+
+Let $\psi_0$ denote the true (but unknown) value of vaccine efficacy. To test the vaccine efficacy, we set up the hypotheses:
+
+$\bullet$  Null Hypothesis $(H_0): \psi_0 = \psi_0^{null}$,
+
+$\bullet$  Alternative Hypothesis $(H_1): \psi_0 \not= \psi_0^{null}$
+
+The likelihood ratio test statistic follows a chi-square distribution with 1 degree of freedom:
+
+$$W = 2ln[\frac{L(\hat{\psi_0}^{mle})}{L(\psi_0^{null})}] = 2ln[l(\psi_0^{mle}) -l(\psi_0^{null})] \approx X_1^2$$
+Then, we can calculate the p-value. If the p-value is less than the significance level $\alpha$, we reject the null hypothesis and conclude that the BNT162b2 vaccine has a significant effect.
+
+## Method 2:  Method of Moment Inference for Vaccine efficacy
+
+We are interested in the value of $\hat\psi^{mom}_0$. Since $\pi = \frac{1-\psi}{2-\psi}$, we can find the M.O.M estimate of $\psi_0$ by solving the equation $E(X) = \bar{x}$, where $\bar{x}$ equals to x in our data.
+
+\begin{align*}
+E(X) &= x \\
+n\pi &= x \\
+n \frac{1-\psi}{2-\psi} &= x \\
+2x - x \psi &= n - n \psi \\
+\psi (n-x) &= n-2x \\
+\psi &= \frac{n-2x}{n-x}
+\end{align*}
+
+Therefore, $\hat\psi^{mom}_0 = \frac{n-2x}{n-x}$.
+Now, in order to make inferences about $\psi$ (the vaccine efficacy) using the method of moments (MOM) approach, we can construct confidence intervals (CI) and conduct hypothesis testing. 
+
+__Confident Interval of $\psi_0^{mom}$__
+
+To construct confidence intervals for $\psi$, we will use the bootstrap method to construct confidence intervals for $\psi$:
+1. Re-sampling: Randomly re-sample the original data with replacement.
+2. Statistic Calculation: For each re-sample, calculate the MOM estimate $\psi_0^{mom}$.
+3. Repetition: Repeat the re-sampling process 100 times to build a distribution of the MOM estimates.
+4. Confidence Interval: Calculate confidence intervals of $\psi$: $\hat\psi^{mom}_0 \pm Z_{\alpha/2}SE(\hat\psi^{mom}_0)$ where $\alpha$ is the significant level.
+
+__Hypothesis Testing for $\psi_0^{mom}$__
+
+Another statistical inference of our estimation is hypothesis testing. In the context of vaccine efficacy, let $\psi_0$ denote the true (but unknown) value of vaccine efficacy. To test the vaccine efficacy, we set up the hypotheses:
+
+$\bullet$  Null Hypothesis $(H_0): \psi_0 = \psi_0^{null}$,
+$\bullet$  Alternative Hypothesis $(H_1): \psi_0 \not= \psi_0^{null}$
+
+By using the empirical p-value from the bootstrap distribution, we can make a more robust inference about the vaccine efficacy $\psi$. If the empirical p-value is less than the significance level, we reject the null hypothesis and conclude that the vaccine has a significant effect.
+
+# Result
+The clinical trial compared the number of COVID-19 cases in participants receiving the BNT162b2 (Pfizer) vaccine versus a placebo. The table below summarizes the descriptive statistics:
+```{r, echo=FALSE}
+# Create a summary table
+summary_table <- data.frame(
+  Group = c("BioNTech-Pfizer", "Placebo"),
+  `Number of Cases` = c(8, 162),
+  `Total Subjects` = c(17411, 17511)
+)
+
+# Print table
+knitr::kable(summary_table, caption = "COVID-19 Cases in BNT162b2 and Placebo Groups")
+```
+Out of the total 170 COVID-19 cases observed in the study, 8 cases were in the BioNTech-Pfizer group, while 162 cases were in the placebo group. The proportions of subjects experiencing COVID-19 were significantly lower in the vaccinated group. Figure 1 displays the number of COVID-19 cases in each group.
+
+```{r, echo=FALSE}
+data = data.frame(
+  group = c("BioNTech-Pfizer", "Placebo"),
+  num_cases = c(8, 162),
+  count = c("17,411 subjects", "17,511 subjects")
+)
+
+ggplot(data, aes(x = group, y = num_cases)) + 
+    geom_col(fill = "#0099f9", width = 0.6) +  labs(
+      title = "Number of Covid-19 Cases in Group Receiving Pfizer Vaccine vs. Placebo", y= "Number of cases at least 7 days after receiving dose"
+  ) + geom_text(aes(label = count), vjust=-0.5)
+```
+
+Figure 1. Number of COVID-19 cases in the group receiving the Pfizer vaccine versus the placebo group. The BioNTech-Pfizer group had significantly fewer cases compared to the placebo group.
+
+## Method 1:  Likelihood Inference for Vaccine efficacy
+
+Since our sample size is not very large, we can calculate empirical P-value by simulation.
+```{r,echo=FALSE}
+obs_w = 121
+
+set.seed(123)
+B <- 100
+
+
+psi_null = 0.3
+n = 170
+x = 8
+### probability of COVID with vaccine
+cases_vaccine = (1-psi_null)/(2-psi_null)
+### probability of COVID with no vaccine 
+cases_placebo = 1-cases_vaccine
+
+null_wstar = numeric(B)
+
+for(i in 1:B) {
+  sample_boot <- sample(c(1, 0), size = n, replace = TRUE, prob = c(cases_vaccine, cases_placebo))
+  xstar <- sum(sample_boot == 1)
+  mle <- (n - 2 * xstar) / (n - xstar)
+  loglik_mle <- log(choose(n, xstar)) + xstar*log(1 - mle) - n*log(2 - mle)
+  loglik_null <- log(choose(n, xstar)) + xstar*log(1 - psi_null) - n*log(2 - psi_null)
+  null_wstar[i] <- 2 * (loglik_mle - loglik_null)
+}
+
+# Visualize the null distribution of wstar
+ggplot(data = data.frame(x = null_wstar),
+       mapping = aes(x = x)) +
+  geom_histogram(mapping = aes(y = after_stat(density)),
+                 binwidth = 0.7) +
+  geom_vline(xintercept = obs_w, color = "red") +
+  labs(title = "Null distribution of W")
+```
+Figure 2. The null distribution of W*.
+
+
+```{r,echo=FALSE}
+# Define the log-likelihood function
+loglik.binom <- function(phi, x, n) {
+  ifelse((phi < 0 | phi > 1), NA, log(choose(n, x)) + x * log(1 - phi) - n * (2 - phi))
+}
+
+# Example data
+n <- 170
+x <- 8
+
+theta_0_mle_estimate <- (n-2*x)/(n-x)
+
+phi_values <- seq(0, 1, by = 0.01)
+log_likelihood_values <- sapply(phi_values, function(phi) loglik.binom(phi, x, n))
+
+# plot of log likelihood function for phi
+plot(phi_values, log_likelihood_values, type = "l",
+     xlab = "phi", ylab = "log-likelihood", main = "Log-Likelihood Function")
+abline(v = theta_0_mle_estimate, col = "blue")
+text(x = theta_0_mle_estimate, y = max(-340:-220), labels = "MLE", pos = 2, col = "blue")
+
+```
+
+Figure 3. Log likelihood function
+
+__Method 2:  Method of Moment Inference for Vaccine efficacy__
+
+CI:
+P-value:
+
+```{r,echo=FALSE}
+# Define parameters
+B <- 100
+n <- 170
+prob1 <- 8 / 170
+prob2 <- 162 / 170
+z <- qnorm(0.975)
+
+# Initialize vectors to store bootstrap values and confidence intervals
+boot_values <- numeric(B)
+se_boot <- numeric(B)
+lower_mom_boot <- numeric(B)
+upper_mom_boot <- numeric(B)
+
+# Perform bootstrap sampling
+set.seed(123)  # For reproducibility
+for (i in 1:B) {
+  sample_boot <- sample(c(1, 0), size = n, replace = TRUE, prob = c(prob1, prob2))
+  x <- length(which(sample_boot == 1))
+  boot_values[i] <- (n - 2*x) / (n - x)
+  se_boot[i] <- sd(sample_boot)  # Standard error for each bootstrap sample
+  lower_mom_boot[i] <- boot_values[i] - z * se_boot[i]
+  upper_mom_boot[i] <- pmin(boot_values[i] + z * se_boot[i],1)
+}
+
+# Create a dataframe for plotting
+sample_summary <- data.frame(
+  sample = 1:B,
+  lower = lower_mom_boot,
+  upper = upper_mom_boot,
+  estimate = boot_values
+)
+
+# Calculate overall standard error for the estimator
+se <- sd(boot_values)
+
+# Calculate overall confidence interval for the estimator
+psi_mom <- 154 / 162
+lower_mom <- psi_mom - z * se
+upper_mom <- psi_mom + z * se
+
+# Plot the confidence intervals for the bootstrap samples
+ggplot(data = sample_summary) +
+  geom_segment(mapping = aes(x = lower, xend = upper, y = sample, yend = sample), color = "blue") +
+  labs(x = "Sample Confidence Interval", y = "Bootstrap Samples",
+       title = "90% Confidence Interval for 100 Bootstrap Samples") +
+  theme_minimal() +
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
+  geom_vline(xintercept = psi_mom, color = "red", linetype = "dashed") +
+  annotate("text", x = psi_mom, y = B * 0.95, label = "Observed Efficacy", color = "red", angle = 90, vjust = -0.5)
+```
+
+Figure 4. 90% Confidence Interval for 100 Bootstrap Samples.
+
+The plot will show the 95% confidence interval for the vaccine efficacy estimate, with the observed MOM estimate indicated by a red dashed line and a blue point. This visualization helps to see the variability and central tendency of the MOM estimates obtained from bootstrapping
+
+
+# Discussion/Conclusion:
+
+Our maximum likelihood estimate of the vaccine efficcy $\psi$ was $\frac{n-2x}{n-x} = \frac{170-2\cdot8}{170-8} = 0.9506$. As the likelihood ratio test gave an extremely low p-value of $2.822294 \times 10^{-28}$, we can confidently reject the null hypothesis that $\psi = 0.3$. Under the method of empirical p-values, we calculated a p-value that is extremely close to $0$, and in the plot we can see that our calculated value of $W$ is very far away from any of the values of $W$ under the null distribution. When checking the regularity condition, although the log-likelihood is not similar to the Taylor approximation overall, the functions are very similar around the value of the MLE, which indicates that this method is a reliable way of estimating the efficacy rate.
+
+Our method of moments estimate of $\psi$ was also $\frac{n-2x}{n-x} = \frac{170-2\cdot8}{170-8} = 0.9506$, with a $95\%$ confidence interval of $[0.9148, 0.9865]$. When we bootstrapped 100 random samples, we found that none of of the confidence intervals contained $\psi_{null} = 0.3$, and we calculated a p-value that is extremely close to $0$. As this p-value is far below our $\alpha = 0.05$, we have very evidence for rejecting the null hypothesis that the vaccine efficacy rate $\psi = 0.3$.
+
+Comparing our results to the Pfizer analysis, although their method of using a Bayestian estimator was similar, we found similar confidence intervals for the vaccine efficacy. While the Pfizer study did not use p-values, they found a "more than a 99.99% probability of a true vaccine efficacy greater than 30%". Conceptually, this is similar to the p-values for a vaccine efficacy $\neq 30\%$ we found that were extremely close to $0$. So although we used different methodologies, our results strongly support the conclusion of the Pfizer study that was used in support of approval of the Pfizer-BionNTech vaccines.
+
+In conclusion, as both the maximum likelihood estimate and method of moments show p-values very close to $0$, we can conclude that the COVID-19 vaccines are very likely to have a high efficacy rate, most likely in the range of $91.48\%$ to $98.65\%$. For practical policy implications, our results strongy suggest that public health systems should promote the distribution and use of the Pfizer-BionNTech mRNA vaccines as a tool against the Covid-19 Pandemic.
+
+# References:
+
+https://www.cell.com/molecular-therapy-family/molecular-therapy/fulltext/S1525-0016(21)00395-6#secsectitle0025
+https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD015477/full
+https://www.thelancet.com/journals/ebiom/article/PIIS2666-5247(21)00069-0/fulltext
+
+# Appendix:
+
+Regularity Condition Check
+
+```{r,warning=FALSE}
+# Define the second-order Taylor approximation function
+taylor_approx <- function(phi, x, n, phi_hat) {
+  loglik_prime <- - x / (1 - phi_hat) + n / (2 - phi_hat)
+  loglik_double_prime <- - x / (1 - phi_hat)^2 + n / (2 - phi_hat)^2
+  return(loglik.binom(phi_hat, x, n) + loglik_prime * (phi - phi_hat) 
+         + 0.5 * loglik_double_prime * (phi - phi_hat)^2)
+}
+
+phi_values <- seq(0.01, 0.99, by = 0.01)
+# Compute the log-likelihood values and the second-order Taylor approximation
+loglik_values <- loglik.binom(phi_values, 8, 170)
+taylor_values <- taylor_approx(phi_values, 8, 170, theta_0_mle_estimate)
+
+# Create a dataframe for plotting
+df <- data.frame(phi = phi_values, loglik = loglik_values, taylor = taylor_values)
+
+# Plot
+ggplot(df, aes(phi)) +
+  geom_line(aes(y = loglik, color = "Log-Likelihood"), size = 1) +
+  geom_line(aes(y = taylor, color = "Taylor Approximation"), 
+            linetype = "dashed", size = 1) +
+  geom_vline(xintercept = theta_0_mle_estimate, color = "blue", 
+             linetype = "dotted", size = 1) +
+  labs(title = "Log-Likelihood and Second-Order Taylor Approximation",
+       x = expression(phi),
+       y = "Log-Likelihood") +
+  scale_color_manual(values = c("black", "red"),
+                     labels = c("Log-Likelihood", "Taylor Approximation")) +
+  theme_minimal() +
+  annotate("text", x = theta_0_mle_estimate + 0.05, 
+           y = max(df$loglik, na.rm = TRUE) - 100, 
+           label = "MLE", color = "blue")
+```
+
+
+Calculate the P-value
+```{r}
+n = 170
+x = 8
+null = 0.3
+
+# Calculate the mle value of psi
+mle <- (170 - 2*8)/(170-8)
+# Calculate the standard error of psi
+se <- (1-mle)*(2-mle)/sqrt(8*(2-mle)^2 - 170*(1-mle)^2)
+# The log likelihood function
+L_mle <- choose(n ,x)*(1-mle)^x * (1/(2-mle))^n
+L_null <- choose(n ,x)*(1-null)^x * (1/(2-null))^n
+# Calculate the test statistic W
+w = 2*log(L_mle/L_null)
+# Calculate the p-value
+pvalue = pchisq(w, df=1, lower.tail = F)
+pvalue
+```
+
+Since our sample size is not very large, we can calculate empirical P-value by simulation.
+```{r,fig.keep='none'}
+set.seed(123)
+obs_w = 121
+B <- 100
+
+psi_null = 0.3
+n = 170
+x = 8
+### probability of COVID with vaccine
+cases_vaccine = (1-psi_null)/(2-psi_null)
+### probability of COVID with no vaccine 
+cases_placebo = 1-cases_vaccine
+
+null_wstar = numeric(B)
+
+for(i in 1:B) {
+  sample_boot <- sample(c(1, 0), size = n, 
+                        replace = TRUE, prob = c(cases_vaccine, cases_placebo))
+  xstar <- sum(sample_boot == 1)
+  mle <- (n - 2 * xstar) / (n - xstar)
+  loglik_mle <- log(choose(n, xstar)) + xstar*log(1 - mle) - n*log(2 - mle)
+  loglik_null <- log(choose(n, xstar)) + xstar*log(1 - psi_null) - n*log(2 - psi_null)
+  null_wstar[i] <- 2 * (loglik_mle - loglik_null)
+}
+
+# Visualize the null distribution of wstar
+ggplot(data = data.frame(x = null_wstar),
+       mapping = aes(x = x)) +
+  geom_histogram(mapping = aes(y = after_stat(density)),
+                 binwidth = 0.7) +
+  geom_vline(xintercept = obs_w, color = "red") +
+  labs(title = "Null distribution of W")
+
+pvalue <- mean(null_wstar >= obs_w)
+cat("Empirical P-value:", pvalue)
+```
+
+
+__Method 2:  Method of Moment Inference for Vaccine efficacy__
+
+
+```{r}
+# Define parameters
+B <- 100
+n <- 170
+prob1 <- 8 / 170
+prob2 <- 162 / 170
+z <- qnorm(0.975)
+
+# Initialize vectors to store bootstrap values and confidence intervals
+boot_values <- numeric(B)
+se_boot <- numeric(B)
+lower_mom_boot <- numeric(B)
+upper_mom_boot <- numeric(B)
+
+# Perform bootstrap sampling
+set.seed(123)  # For reproducibility
+for (i in 1:B) {
+  sample_boot <- sample(c(1, 0), size = n, 
+                        replace = TRUE, prob = c(prob1, prob2))
+  x <- length(which(sample_boot == 1))
+  boot_values[i] <- (n - 2*x) / (n - x)
+  se_boot[i] <- sd(sample_boot)  # Standard error for each bootstrap sample
+  lower_mom_boot[i] <- boot_values[i] - z * se_boot[i]
+  upper_mom_boot[i] <- pmin(boot_values[i] + z * se_boot[i],1)
+}
+
+# Calculate overall standard error for the estimator
+se <- sd(boot_values)
+
+# Calculate overall confidence interval for the estimator
+psi_mom <- 154 / 162
+lower_mom <- psi_mom - z * se
+upper_mom <- psi_mom + z * se
+
+# Print results
+cat("95% Confidence Interval for psi_mom:", lower_mom, "to", upper_mom, "\n")
+```
+
+
+
+```{r,fig.keep='none'}
+# Create a dataframe for plotting
+sample_summary <- data.frame(
+  sample = 1:B,
+  lower = lower_mom_boot,
+  upper = upper_mom_boot,
+  estimate = boot_values
+)
+
+# Plot the confidence intervals for the bootstrap samples
+ggplot(data = sample_summary) +
+  geom_segment(mapping = aes(x = lower, xend = upper, y = sample, yend = sample), color = "blue") +
+  labs(x = "Sample Confidence Interval", y = "Bootstrap Samples",
+       title = "90% Confidence Interval for 100 Bootstrap Samples") +
+  theme_minimal() +
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
+  geom_vline(xintercept = psi_mom, color = "red", linetype = "dashed") +
+  annotate("text", x = psi_mom, y = B * 0.95, label = "Observed Efficacy", color = "red", angle = 90, vjust = -0.5)
+```
+
+
+```{r}
+# Calculate empirical p-value
+set.seed(123)
+B <- 100
+psi_null = 0.3
+n = 170
+x = 8
+### probability of COVID with vaccine
+cases_vaccine = (1-psi_null)/(2-psi_null)
+### probability of COVID with no vaccine 
+cases_placebo = 1-cases_vaccine
+
+for(i in 1:B) {
+  sample_boot = sample(c(1, 0), size = n, replace = TRUE, prob = c(cases_vaccine, cases_placebo)) 
+  x = length(which(sample_boot == 1))
+  boot_values[i] = (n - 2 * x) / (n - x)
+}
+empirical_p_value <- mean(boot_values >= psi_mom)
+cat("Empirical p-value:", empirical_p_value, "\n")
+```
+
