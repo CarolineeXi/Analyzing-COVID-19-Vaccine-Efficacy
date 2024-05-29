@@ -186,6 +186,7 @@ n <- 170
 prob1 <- 8 / 170
 prob2 <- 162 / 170
 z <- qnorm(0.975)
+psi_mom <- (n-2*x)/(n-x)
 
 # Initialize vectors to store bootstrap values and confidence intervals
 boot_values <- numeric(B)
@@ -201,14 +202,13 @@ for (i in 1:B) {
   boot_values[i] <- (n - 2*x) / (n - x)
   se_boot[i] <- sd(sample_boot)  # Standard error for each bootstrap sample
   lower_mom_boot[i] <- boot_values[i] - z * se_boot[i]
-  upper_mom_boot[i] <- boot_values[i] + z * se_boot[i]
+  upper_mom_boot[i] <- min(boot_values[i] + z * se_boot[i],1)
 }
 
 # Calculate overall standard error for the estimator
 se <- sd(boot_values)
 
 # Calculate overall confidence interval for the estimator
-psi_mom <- 154 / 162
 lower_mom <- psi_mom - z * se
 upper_mom <- psi_mom + z * se
 
@@ -232,8 +232,8 @@ ggplot(data = sample_summary) +
        title = "90% Confidence Interval for 100 Bootstrap Samples") +
   theme_minimal() +
   theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
-  geom_vline(xintercept = psimom, color = "red", linetype = "dashed") +
-  annotate("text", x = psimom, y = B * 0.95, label = "Observed Efficacy", color = "red", angle = 90, vjust = -0.5)
+  geom_vline(xintercept = psi_mom, color = "red", linetype = "dashed") +
+  annotate("text", x = psimom, y = B * 0.95, label = "Observed Efficacy", color = "red")
 ```
 
 ```{r}
